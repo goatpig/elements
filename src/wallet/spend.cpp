@@ -1446,6 +1446,19 @@ bool CWallet::CreateTransactionInternal(
 
     // The only time that fee_needed should be less than the amount available for fees (in change_and_fee - change_amount) is when
     // we are subtracting the fee from the outputs. If this occurs at any other time, it is a bug.
+    if (fee_needed > map_change_and_fee.at(policyAsset) - change_amount) {
+        /*
+        Not sure why this fee change amount condition should lead to
+        an failed assertion in a method that is meant to return true/false.
+        At least a throw with some verbose would be better, the process
+        segfaults if this condition is met right now.
+
+        Also, this code in practice seems to be called twice, with a set
+        of parameters (cc.m_avoid_partial_spends=true) the second time
+        around that is likely to lead to this failure.
+        */
+        return false;
+    }
     assert(coin_selection_params.m_subtract_fee_outputs || fee_needed <= map_change_and_fee.at(policyAsset) - change_amount);
 
     // Update nFeeRet in case fee_needed changed due to dropping the change output
